@@ -2,15 +2,18 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Mail;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace AppGeneral
 {
     public class AppGeneral
     {
 
-        public string CadenaFecha(string Cadena, FormatoFecha nFormato, Boolean Normalizada)
+		private readonly string[] Blacklist = new string[] { "%252f", "%c0%af","%c1%1c","%ef%bc%8f","%e2%88%95","%252E%252E%252F", "%e2%81%84","%cc%b8","%cc%b7",".%u2216",".%255c","%2e%2e%5c",".%2f","%2e%2e/","%2e%2e%2f","<", ">", "?", ":", "~","..", "./","'", "--", ";--", ";", "|", "/*", "*/", "=", "[", "%", "@@", "@", "char", "nchar", "varchar", "nvarchar", "alter", "begin", "cast", "create", "cursor", "declare", "delete", "drop", "end", "exec", "execute", "fetch", "insert", "kill", "open", "select", "sys", "sysobjects", "syscolumns", "table", "update", "grant", "shutdown", "information_schema", "exists", "command", "load_file", "privileges", "group_concat", "db_name", "object_schema_name", "schema_id", "schema_name", "connectionproperty", "context_info", "host_id", "$partition", "current_user", "session_user", "suser_id", "suser_name", "user_name", "original_login", "permissions", "database_principal_id", "pwdencrypt", "pwdcompare", "db_name", "serverproperty", "scope_identity", "databasepropertyex", "applock_test"};
+
+
+		public string CadenaFecha(string Cadena, FormatoFecha nFormato, Boolean Normalizada)
         {
             // Recibe una cadena que contiene una fecha con el formato "DD/MM/YYYY"
             // Y devuelve una cadena formateada de acuerdo a:
@@ -148,17 +151,28 @@ namespace AppGeneral
 
         }
 
+		public bool CadenaValida(string Cadena)
+		{
+			bool Retorno;
+
+			Retorno = true;
+
+			Retorno = (Cadena.Trim() == CleanString(Cadena.Trim()));
+
+			return Retorno;
+
+		}
+
         public string CleanString(string Cadena)
             {
                 
                 string Retorno;
-                string[] Blacklist;
                 string cad;
                 int nMax;
 
                 Retorno = Cadena;
                 cad = string.Empty;
-                Blacklist = new string[] {"'", "--", ";--", ";", "/*", "*/", "=", "[", "%", "@@", "@", "char", "nchar", "varchar", "nvarchar", "alter", "begin", "cast", "create", "cursor", "declare", "delete", "drop", "end", "exec", "execute", "fetch", "insert", "kill", "open", "select", "sys", "sysobjects", "syscolumns", "table", "update", "grant", "shutdown", "information_schema", "exists", "command", "load_file", "privileges", "group_concat", "db_name", "object_schema_name", "schema_id", "schema_name", "connectionproperty", "context_info", "host_id", "$partition", "current_user", "session_user", "suser_id", "suser_name", "user_name", "original_login", "permissions", "database_principal_id", "pwdencrypt", "pwdcompare", "db_name", "serverproperty", "scope_identity", "databasepropertyex", "applock_test"};
+                
                 nMax = Blacklist.GetUpperBound(0);
 
                 for (int i = 0; i <= nMax; i++)
@@ -249,14 +263,13 @@ namespace AppGeneral
             {
 
 				bool Retorno;
-				MailAddress eAddress;
+				string pattern = @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\Z";
 
-				Retorno = false;
+				Retorno = true;
 
 				try
 				{
-					eAddress = new MailAddress(eMail.Trim());
-					Retorno = true;
+					Retorno = Regex.IsMatch(eMail, pattern);
 				}
 				catch (Exception)
 				{
@@ -341,16 +354,17 @@ namespace AppGeneral
 
 				try
 				{
-					Log = new System.Diagnostics.EventLog();
-					Log.Source = sApp;
-					Log.WriteEntry(sCadena);
+                Log = new System.Diagnostics.EventLog
+                {
+                    Source = sApp
+                };
+                Log.WriteEntry(sCadena);
 				}
 				catch (Exception ex)
 				{
 					RegistreEventoError(ex, sApp);
 				}
 			}
-
 
 		public void Delete_Files_Date(string sPath, DateTime Fecha, bool Todos)
 			{
@@ -465,17 +479,18 @@ namespace AppGeneral
 
 				FileInformacion Retorno;
 
-				Retorno = new FileInformacion();
+            Retorno = new FileInformacion
+            {
+                Extension = fi.Extension,
+                Fec_Creacion = fi.CreationTime,
+                Fec_UAcceso = fi.LastAccessTime,
+                Fec_UEscritura = fi.LastWriteTime,
+                Nombre = fi.Name,
+                Tamano = fi.Length,
+                SoloLectura = fi.IsReadOnly
+            };
 
-				Retorno.Extension = fi.Extension;
-				Retorno.Fec_Creacion = fi.CreationTime;
-				Retorno.Fec_UAcceso = fi.LastAccessTime;
-				Retorno.Fec_UEscritura = fi.LastWriteTime;
-				Retorno.Nombre = fi.Name;
-				Retorno.Tamano = fi.Length;
-				Retorno.SoloLectura = fi.IsReadOnly;
-
-				return Retorno;
+            return Retorno;
 
 			}
 
